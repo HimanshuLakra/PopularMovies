@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">PopularMovies</string>
+    <string name="API_KEY">5581802f52b42e662fade7be5bb11099</string>
+
+    <string name="rated">Highest Rated</string>
+    <string name="popular">Most Popular</string>
+    <string name="font">roboto-regular</string>
+
+    <string name="nointernet">Please Check your internet Connection</string>
+    <string name="tryAgain">TRY AGAIN</string>
+</resources>
