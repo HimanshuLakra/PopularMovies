@@ -14,8 +14,8 @@ public class DataUtils implements Parcelable {
 
     public DataUtils(String ImageUrl, String description, String movieTitle, String releaseDate, int voteCount, double popularity) {
         this.ImageUrl = ImageUrl;
-        this.description = description;
         this.movieTitle = movieTitle;
+        this.description = description;
         this.releaseDate = releaseDate;
         this.voteCount = voteCount;
         this.popularity = popularity;
@@ -39,9 +39,9 @@ public class DataUtils implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
 
         dest.writeString(ImageUrl);
-        dest.writeString(movieTitle);
         dest.writeString(description);
         dest.writeString(releaseDate);
+        dest.writeString(movieTitle);
         dest.writeInt(voteCount);
         dest.writeDouble(popularity);
     }

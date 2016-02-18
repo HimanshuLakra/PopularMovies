@@ -93,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
+    /*Check internet connection and
+    * call for AsyncTask */
     public void implementTask() {
 
         if (ConnectionDetector.isAvailiable(MainActivity.this)) {
@@ -105,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
             new RequestPoster().execute(Url);
 
         } else {
-
             progressBar.setVisibility(View.GONE);
             gridview.setVisibility(View.GONE);
             noInternet.setVisibility(View.VISIBLE);
@@ -120,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -132,16 +134,24 @@ public class MainActivity extends AppCompatActivity {
 
         if (ConnectionDetector.isAvailiable(MainActivity.this)) {
 
-            dataSet.clear();
+            noInternet.setVisibility(View.GONE);
+            gridview.setVisibility(View.GONE);
+            progressBar.setVisibility(View.VISIBLE);
+            progressBar.setIndeterminate(true);
+            dataSet = new ArrayList<>();
             new RequestPoster().execute(Url);
 
         } else {
 
+            progressBar.setVisibility(View.GONE);
+            gridview.setVisibility(View.GONE);
+            noInternet.setVisibility(View.VISIBLE);
             Toast.makeText(MainActivity.this, "Check your internet Connection", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 
     public class RequestPoster extends AsyncTask<String, Void, String> {
 
@@ -169,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
                 if (resCode == HttpURLConnection.HTTP_OK) {
                     in = httpConn.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
                     String line;
                     while ((line = reader.readLine()) != null) {
                         result.append(line);
@@ -208,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
                         DataUtils dataUtil = new DataUtils(posterPath, movieresult.getString("overview"),
                                 movieresult.getString("title"), movieresult.getString("release_date"),
-                                movieresult.getInt("vote_count"), movieresult.getDouble("popularity"));
+                                movieresult.getInt("vote_count"), movieresult.getDouble("vote_average"));
 
                         dataSet.add(dataUtil);
                     }

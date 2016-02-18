@@ -40,7 +40,7 @@ public class DetailActivity extends AppCompatActivity {
         date.setText(receivedIntent.getStringExtra("RELEASE_DATE"));
         description.setText(receivedIntent.getStringExtra("DESCRIPTION"));
         vote_count.setText(Integer.toString(receivedIntent.getIntExtra("VOTES", 0)));
-        popularity.setText(String.format("%.0f", receivedIntent.getDoubleExtra("POPULARITY", 0)));
+        popularity.setText(Double.toString(receivedIntent.getDoubleExtra("POPULARITY", 0)));
 
         CollapsingToolbarLayout collapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_bar);
         collapsingToolbarLayout.setExpandedTitleTextAppearance(R.style.collapsingBar);
