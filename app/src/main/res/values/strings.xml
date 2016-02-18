@@ -8,4 +8,8 @@
 
     <string name="nointernet">Please Check your internet Connection</string>
     <string name="tryAgain">TRY AGAIN</string>
+
+    <string name="URLInitial">http://api.themoviedb.org/3/discover/movie?sort_by=</string>
+    <string name="URLRear">api_key=xxxxxxxxxxxxxxxxx</string>
+
 </resources>

@@ -30,9 +30,6 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    //arrayList for recieved movies poster URL's
-    static ArrayList<String> moviesURLS;
-
     //arrayList for recieved movies details
     static ArrayList<DataUtils> dataSet;
 
@@ -55,7 +52,15 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setTitle("PopularMovies");
         setSupportActionBar(toolbar);
 
-        implementTask();
+        if (savedInstanceState == null || !savedInstanceState.containsKey("movieDataSet")) {
+            implementTask();
+        } else {
+            dataSet = savedInstanceState.getParcelableArrayList("movieDataSet");
+            progressBar.setVisibility(View.GONE);
+            noInternet.setVisibility(View.GONE);
+            gridview.setVisibility(View.VISIBLE);
+            gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
+        }
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
@@ -80,7 +85,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("movieDataSet", dataSet);
+        super.onSaveInstanceState(outState);
     }
 
     public void implementTask() {
@@ -89,11 +99,9 @@ public class MainActivity extends AppCompatActivity {
 
             noInternet.setVisibility(View.GONE);
             progressBar.setVisibility(View.VISIBLE);
-            String Url = "http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=xxxxxxxxxx";
+            String Url = getString(R.string.URLInitial) + "popularity.desc&" + getString(R.string.URLRear);
             progressBar.setIndeterminate(true);
-            moviesURLS = new ArrayList<String>();
             dataSet = new ArrayList<>();
-
             new RequestPoster().execute(Url);
 
         } else {
@@ -116,16 +124,14 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         String Url;
-
         if (item.getItemId() == R.id.most_popular) {
-            Url = "http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=xxxxxxxxx";
+            Url = getString(R.string.URLInitial) + "popularity.desc&" + getString(R.string.URLRear);
         } else {
-            Url = "http://api.themoviedb.org/3/discover/movie?sort_by=vote_count.desc&api_key=xxxxxxxxx";
+            Url = getString(R.string.URLInitial) + "vote_count.desc&" + getString(R.string.URLRear);
         }
 
         if (ConnectionDetector.isAvailiable(MainActivity.this)) {
 
-            moviesURLS.clear();
             dataSet.clear();
             new RequestPoster().execute(Url);
 
@@ -197,18 +203,14 @@ public class MainActivity extends AppCompatActivity {
                     for (int i = 0; i < results.length(); i++) {
                         JSONObject movieresult = results.getJSONObject(i);
 
-                        DataUtils dataUtil = new DataUtils();
 
                         String posterPath = "http://image.tmdb.org/t/p/w185/" + movieresult.getString("poster_path");
-                        dataUtil.ImageUrl = posterPath;
-                        dataUtil.releaseDate = movieresult.getString("release_date");
-                        dataUtil.movieTitle = movieresult.getString("title");
-                        dataUtil.popularity = movieresult.getDouble("popularity");
-                        dataUtil.voteCount = movieresult.getInt("vote_count");
-                        dataUtil.description = movieresult.getString("overview");
+
+                        DataUtils dataUtil = new DataUtils(posterPath, movieresult.getString("overview"),
+                                movieresult.getString("title"), movieresult.getString("release_date"),
+                                movieresult.getInt("vote_count"), movieresult.getDouble("popularity"));
 
                         dataSet.add(dataUtil);
-                        moviesURLS.add(posterPath);
                     }
 
                 } catch (JSONException e) {
@@ -220,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
                 noInternet.setVisibility(View.GONE);
                 gridview.setVisibility(View.VISIBLE);
 
-                gridview.setAdapter(new GridAdapter(MainActivity.this, moviesURLS));
+                gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
             }
 
         }

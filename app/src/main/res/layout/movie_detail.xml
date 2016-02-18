@@ -88,7 +88,7 @@
                     android:id="@+id/layout1"
                     android:layout_width="1dp"
                     android:layout_height="55dp"
-                    android:background="#eeeeee"
+                    android:background="@color/seperator"
                     android:orientation="vertical" />
 
                 <LinearLayout style="@style/LinearLayoutWeight" />
@@ -107,7 +107,8 @@
 
                     <TextView
                         android:id="@+id/release_date"
-                        style="@style/TextViewStyle" />
+                        style="@style/TextViewStyle_stats" />
+
                 </LinearLayout>
 
                 <LinearLayout style="@style/LinearLayoutWeight" />
@@ -116,7 +117,7 @@
                     android:id="@+id/layout2"
                     android:layout_width="1dp"
                     android:layout_height="55dp"
-                    android:background="#eeeeee"
+                    android:background="@color/seperator"
                     android:orientation="vertical" />
 
                 <LinearLayout style="@style/LinearLayoutWeight" />
@@ -135,7 +136,7 @@
 
                     <TextView
                         android:id="@+id/votes"
-                        style="@style/TextViewStyle" />
+                        style="@style/TextViewStyle_stats" />
 
                 </LinearLayout>
 

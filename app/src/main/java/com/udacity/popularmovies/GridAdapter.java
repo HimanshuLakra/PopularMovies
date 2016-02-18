@@ -15,15 +15,15 @@ import java.util.ArrayList;
 public class GridAdapter extends BaseAdapter{
 
     private Context mContext;
-    ArrayList<String> moviesURl;
+    ArrayList<DataUtils> dataSet;
 
-    public GridAdapter(Context c, ArrayList<String> moviesURl) {
+    public GridAdapter(Context c, ArrayList<DataUtils> dataSet) {
         mContext = c;
-        this.moviesURl=moviesURl;
+        this.dataSet=dataSet;
     }
 
     public int getCount() {
-        return moviesURl.size();
+        return dataSet.size();
     }
 
     public Object getItem(int position) {
@@ -34,9 +34,6 @@ public class GridAdapter extends BaseAdapter{
         return 0;
     }
 
-    /* create a new ImageView for each item referenced by the Adapter
-        if it's not recycled, initialize some attributes
-     */
     public View getView(int position, View convertView, ViewGroup parent) {
 
         ImageView imageView;
@@ -44,16 +41,13 @@ public class GridAdapter extends BaseAdapter{
 
             convertView = LayoutInflater.from(mContext).inflate(
                     R.layout.grid_view_single_layout, parent, false);
-            /*imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(150,150));
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);*/
 
         }
 
         imageView = (ImageView) convertView.findViewById(R.id.gridImage);
 
         Glide.with(mContext)
-                .load(moviesURl.get(position))
+                .load(dataSet.get(position).ImageUrl)
                 .centerCrop()
                 .crossFade()
                 .placeholder(R.drawable.grid_placeholder)
