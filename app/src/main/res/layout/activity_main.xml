@@ -58,7 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"
-            android:columnWidth="95dp"
+            android:columnWidth="150dp"
             android:gravity="center"
             android:horizontalSpacing="0dp"
             android:numColumns="auto_fit"
