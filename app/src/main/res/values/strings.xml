@@ -10,6 +10,6 @@
     <string name="tryAgain">TRY AGAIN</string>
 
     <string name="URLInitial">http://api.themoviedb.org/3/discover/movie?sort_by=</string>
-    <string name="URLRear">api_key=xxxxxxxxxxxxxxx</string>
+    <string name="URLRear">api_key=xxxxxxxxxxxxxxxx</string>
 
 </resources>

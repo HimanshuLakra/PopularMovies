@@ -5,29 +5,29 @@ import android.os.Parcelable;
 
 public class DataUtils implements Parcelable {
 
-    String ImageUrl;
-    String description;
-    String movieTitle;
-    String releaseDate;
-    int voteCount;
-    double popularity;
+    String poster_path;
+    String overview;
+    String title;
+    String release_date;
+    int vote_count;
+    double vote_average;
 
     public DataUtils(String ImageUrl, String description, String movieTitle, String releaseDate, int voteCount, double popularity) {
-        this.ImageUrl = ImageUrl;
-        this.movieTitle = movieTitle;
-        this.description = description;
-        this.releaseDate = releaseDate;
-        this.voteCount = voteCount;
-        this.popularity = popularity;
+        this.poster_path = ImageUrl;
+        this.overview = description;
+        this.title = movieTitle;
+        this.release_date = releaseDate;
+        this.vote_count = voteCount;
+        this.vote_average = popularity;
     }
 
     private DataUtils(Parcel in) {
-        ImageUrl = in.readString();
-        description = in.readString();
-        releaseDate = in.readString();
-        movieTitle = in.readString();
-        voteCount = in.readInt();
-        popularity = in.readDouble();
+        this.poster_path = in.readString();
+        this.overview = in.readString();
+        this.title = in.readString();
+        this.release_date = in.readString();
+        this.vote_count = in.readInt();
+        this.vote_average = in.readDouble();
     }
 
     @Override
@@ -38,18 +38,19 @@ public class DataUtils implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
 
-        dest.writeString(ImageUrl);
-        dest.writeString(description);
-        dest.writeString(releaseDate);
-        dest.writeString(movieTitle);
-        dest.writeInt(voteCount);
-        dest.writeDouble(popularity);
+        dest.writeString(poster_path);
+        dest.writeString(overview);
+        dest.writeString(title);
+        dest.writeString(release_date);
+        dest.writeInt(vote_count);
+        dest.writeDouble(vote_average);
     }
 
 
     public final Parcelable.Creator<DataUtils> CREATOR = new Parcelable.Creator<DataUtils>() {
         @Override
         public DataUtils createFromParcel(Parcel parcel) {
+
             return new DataUtils(parcel);
         }
 

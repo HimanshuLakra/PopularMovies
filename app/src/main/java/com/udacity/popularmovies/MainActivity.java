@@ -1,7 +1,6 @@
 package com.udacity.popularmovies;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -19,14 +18,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,11 +54,18 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null || !savedInstanceState.containsKey("movieDataSet")) {
             implementTask();
         } else {
+
             dataSet = savedInstanceState.getParcelableArrayList("movieDataSet");
-            progressBar.setVisibility(View.GONE);
-            noInternet.setVisibility(View.GONE);
-            gridview.setVisibility(View.VISIBLE);
-            gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
+            if (dataSet != null) {
+                progressBar.setVisibility(View.GONE);
+                noInternet.setVisibility(View.GONE);
+                gridview.setVisibility(View.VISIBLE);
+                gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
+            } else {
+                progressBar.setVisibility(View.GONE);
+                noInternet.setVisibility(View.VISIBLE);
+                gridview.setVisibility(View.GONE);
+            }
         }
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -67,12 +73,12 @@ public class MainActivity extends AppCompatActivity {
                                     int position, long id) {
 
                 Intent detailActivity = new Intent(MainActivity.this, DetailActivity.class);
-                detailActivity.putExtra("TITLE", dataSet.get(position).movieTitle);
-                detailActivity.putExtra("IMAGE_URL", dataSet.get(position).ImageUrl);
-                detailActivity.putExtra("DESCRIPTION", dataSet.get(position).description);
-                detailActivity.putExtra("POPULARITY", dataSet.get(position).popularity);
-                detailActivity.putExtra("VOTES", dataSet.get(position).voteCount);
-                detailActivity.putExtra("RELEASE_DATE", dataSet.get(position).releaseDate);
+                detailActivity.putExtra("TITLE", dataSet.get(position).title);
+                detailActivity.putExtra("IMAGE_URL", dataSet.get(position).poster_path);
+                detailActivity.putExtra("DESCRIPTION", dataSet.get(position).overview);
+                detailActivity.putExtra("POPULARITY", dataSet.get(position).vote_average);
+                detailActivity.putExtra("VOTES", dataSet.get(position).vote_count);
+                detailActivity.putExtra("RELEASE_DATE", dataSet.get(position).release_date);
 
                 startActivity(detailActivity);
             }
@@ -98,13 +104,12 @@ public class MainActivity extends AppCompatActivity {
     public void implementTask() {
 
         if (ConnectionDetector.isAvailiable(MainActivity.this)) {
-
             noInternet.setVisibility(View.GONE);
             progressBar.setVisibility(View.VISIBLE);
             String Url = getString(R.string.URLInitial) + "popularity.desc&" + getString(R.string.URLRear);
             progressBar.setIndeterminate(true);
             dataSet = new ArrayList<>();
-            new RequestPoster().execute(Url);
+            RequestPoster(Url);
 
         } else {
             progressBar.setVisibility(View.GONE);
@@ -139,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setIndeterminate(true);
             dataSet = new ArrayList<>();
-            new RequestPoster().execute(Url);
+            // new RequestPoster().execute(Url);
+            RequestPoster(Url);
 
         } else {
 
@@ -153,88 +159,69 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public class RequestPoster extends AsyncTask<String, Void, String> {
+    public void RequestPoster(String Url) {
 
-        @Override
-        protected String doInBackground(String... params) {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(Url)
+                .build();
 
-            InputStream in = null;
-            int resCode = -1;
-            StringBuilder result = null;
-            try {
-                URL url = new URL(params[0]);
-                URLConnection urlConn = url.openConnection();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
 
-                if (!(urlConn instanceof HttpURLConnection)) {
-                    throw new IOException("URL is not an Http URL");
-                }
-                HttpURLConnection httpConn = (HttpURLConnection) urlConn;
-                httpConn.setAllowUserInteraction(false);
-                httpConn.setInstanceFollowRedirects(true);
-                httpConn.setRequestMethod("GET");
-                httpConn.connect();
-                resCode = httpConn.getResponseCode();
-                result = new StringBuilder();
-
-                if (resCode == HttpURLConnection.HTTP_OK) {
-                    in = httpConn.getInputStream();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
-                    }
-                }
-
-                httpConn.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
+                Toast.makeText(MainActivity.this, "error occured",
+                        Toast.LENGTH_SHORT).show();
             }
 
-            if (result == null) {
-                String dummy = "Recieved null";
-                return dummy;
-            } else
-                return result.toString();
-        }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
 
-        @Override
-        protected void onPostExecute(String dataReceieved) {
+                if (response.isSuccessful()) {
 
-            if (dataReceieved.contentEquals("Recieved null")) {
+                    String responseReceieved = response.body().string();
 
-                Toast.makeText(MainActivity.this, "Failed to recieve data from server", Toast.LENGTH_SHORT).show();
+                    try {
+                        JSONObject recievedObject = new JSONObject(responseReceieved);
+                        JSONArray results = recievedObject.getJSONArray("results");
 
-            } else {
-                try {
-                    JSONObject recievedObject = new JSONObject(dataReceieved);
-                    JSONArray results = recievedObject.getJSONArray("results");
+                        for (int i = 0; i < results.length(); i++) {
+                            JSONObject movieresult = results.getJSONObject(i);
 
-                    for (int i = 0; i < results.length(); i++) {
-                        JSONObject movieresult = results.getJSONObject(i);
+                            String posterPath = "http://image.tmdb.org/t/p/w185/" + movieresult.getString("poster_path");
 
+                            DataUtils dataUtil = new DataUtils(posterPath, movieresult.getString("overview"),
+                                    movieresult.getString("title"), movieresult.getString("release_date"),
+                                    movieresult.getInt("vote_count"), movieresult.getDouble("vote_average"));
 
-                        String posterPath = "http://image.tmdb.org/t/p/w185/" + movieresult.getString("poster_path");
+                            dataSet.add(dataUtil);
 
-                        DataUtils dataUtil = new DataUtils(posterPath, movieresult.getString("overview"),
-                                movieresult.getString("title"), movieresult.getString("release_date"),
-                                movieresult.getInt("vote_count"), movieresult.getDouble("vote_average"));
+                        }
 
-                        dataSet.add(dataUtil);
+                    } catch (JSONException e) {
+                        Toast.makeText(MainActivity.this, "error occured",
+                                Toast.LENGTH_SHORT).show();
                     }
 
-                } catch (JSONException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            progressBar.setVisibility(View.GONE);
+                            noInternet.setVisibility(View.GONE);
+                            gridview.setVisibility(View.VISIBLE);
+
+                            gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
+                        }
+                    });
+                } else {
                     Toast.makeText(MainActivity.this, "error occured",
                             Toast.LENGTH_SHORT).show();
                 }
 
-                progressBar.setVisibility(View.GONE);
-                noInternet.setVisibility(View.GONE);
-                gridview.setVisibility(View.VISIBLE);
-
-                gridview.setAdapter(new GridAdapter(MainActivity.this, dataSet));
             }
+        });
 
-        }
     }
 
 }

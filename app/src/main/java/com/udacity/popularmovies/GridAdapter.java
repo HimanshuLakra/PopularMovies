@@ -12,14 +12,14 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 
-public class GridAdapter extends BaseAdapter{
+public class GridAdapter extends BaseAdapter {
 
     private Context mContext;
     ArrayList<DataUtils> dataSet;
 
     public GridAdapter(Context c, ArrayList<DataUtils> dataSet) {
         mContext = c;
-        this.dataSet=dataSet;
+        this.dataSet = dataSet;
     }
 
     public int getCount() {
@@ -47,7 +47,7 @@ public class GridAdapter extends BaseAdapter{
         imageView = (ImageView) convertView.findViewById(R.id.gridImage);
 
         Glide.with(mContext)
-                .load(dataSet.get(position).ImageUrl)
+                .load(dataSet.get(position).poster_path)
                 .centerCrop()
                 .crossFade()
                 .placeholder(R.drawable.grid_placeholder)
