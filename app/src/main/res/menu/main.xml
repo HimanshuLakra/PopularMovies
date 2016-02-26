@@ -13,4 +13,10 @@
         android:title="@string/popular"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/favourite_movies"
+        android:orderInCategory="300"
+        android:title="@string/favourite"
+        app:showAsAction="never" />
+
 </menu>

@@ -1,15 +1,19 @@
 <resources>
     <string name="app_name">PopularMovies</string>
-    <string name="API_KEY">5581802f52b42e662fade7be5bb11099</string>
 
     <string name="rated">Highest Rated</string>
     <string name="popular">Most Popular</string>
     <string name="font">roboto-regular</string>
+    <string name="font_sans">sans-serif</string>
+    <string name="favourite">Favourite</string>
+    <string name="share">Share Trailer</string>
 
     <string name="nointernet">Please Check your internet Connection</string>
     <string name="tryAgain">TRY AGAIN</string>
 
-    <string name="URLInitial">http://api.themoviedb.org/3/discover/movie?sort_by=</string>
-    <string name="URLRear">api_key=xxxxxxxxxxxxxxxx</string>
+    <string name="URLInitial">http://api.themoviedb.org/3/</string>
+    <string name="URLRear">5581802f52b42e662fade7be5bb11099</string>
+    <string name="sort_popular">popularity.desc</string>
+    <string name="sort_rated"></string>
 
 </resources>

@@ -1,4 +1,4 @@
-package com.udacity.popularmovies;
+package com.udacity.popularmovies.adapter;
 
 
 import android.content.Context;
@@ -9,15 +9,17 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.udacity.popularmovies.R;
+import com.udacity.popularmovies.model.MovieModel;
 
 import java.util.ArrayList;
 
 public class GridAdapter extends BaseAdapter {
 
     private Context mContext;
-    ArrayList<DataUtils> dataSet;
+    ArrayList<MovieModel> dataSet;
 
-    public GridAdapter(Context c, ArrayList<DataUtils> dataSet) {
+    public GridAdapter(Context c, ArrayList<MovieModel> dataSet) {
         mContext = c;
         this.dataSet = dataSet;
     }
@@ -47,7 +49,7 @@ public class GridAdapter extends BaseAdapter {
         imageView = (ImageView) convertView.findViewById(R.id.gridImage);
 
         Glide.with(mContext)
-                .load(dataSet.get(position).poster_path)
+                .load("http://image.tmdb.org/t/p/w185/"+dataSet.get(position).poster_path)
                 .centerCrop()
                 .crossFade()
                 .placeholder(R.drawable.grid_placeholder)
