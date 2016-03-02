@@ -5,6 +5,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 
+import com.facebook.stetho.Stetho;
 import com.udacity.popularmovies.fragments.GridFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Stetho.initializeWithDefaults(this);
 
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         Fragment fragment = new GridFragment();
@@ -33,8 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
             uiBundle.putBoolean("twoPaneExists",twoPaneUI);
             fragment.setArguments(uiBundle);
-            fragmentTransaction.add(R.id.grid_fragment_container, fragment);
-            fragmentTransaction.addToBackStack(null).commit();
+            fragmentTransaction.add(R.id.grid_fragment_container, fragment).commit();
         }
 
     }

@@ -1,8 +1,15 @@
 package com.udacity.popularmovies.fragments;
 
+import android.annotation.TargetApi;
+import android.content.ContentUris;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -23,7 +30,9 @@ import com.google.gson.GsonBuilder;
 import com.udacity.popularmovies.ConnectionDetector;
 import com.udacity.popularmovies.R;
 import com.udacity.popularmovies.adapter.GridAdapter;
+import com.udacity.popularmovies.adapter.GridCursorAdapter;
 import com.udacity.popularmovies.api.ApiService;
+import com.udacity.popularmovies.data.MoviesContract;
 import com.udacity.popularmovies.model.ItemTypeAdapterFactory;
 import com.udacity.popularmovies.model.MovieModel;
 
@@ -39,7 +48,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class GridFragment extends Fragment {
+public class GridFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     //arrayList for recieved movies details
     ArrayList<MovieModel> dataSet;
@@ -58,6 +67,20 @@ public class GridFragment extends Fragment {
     @Bind(R.id.try_again)
     Button tryAgain;
     int flagSavedInstance = 0;
+
+    GridCursorAdapter mCursorAdapter;
+    private static final int CURSOR_LOADER_ID = 0;
+    static boolean favouriteSelected = false;
+
+    String[] projections = {
+            MoviesContract.MovieEntry.ID,
+            MoviesContract.MovieEntry.COLUMN_IMAGE,
+            MoviesContract.MovieEntry.COLUMN_DESCRIPTION,
+            MoviesContract.MovieEntry.COLUMN_VOTE_COUNT,
+            MoviesContract.MovieEntry.COLUMN_VOTE_AVERAGE,
+            MoviesContract.MovieEntry.COLUMN_TITLE,
+            MoviesContract.MovieEntry.COLUMN_RELEASE_DATE
+    };
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,13 +108,14 @@ public class GridFragment extends Fragment {
 
         setHasOptionsMenu(true);
 
+        mCursorAdapter = new GridCursorAdapter(getActivity(), null, 0);
+
         Bundle recievedBundle = getArguments();
         twoPaneUI = recievedBundle.getBoolean("twoPaneExists");
 
         if (flagSavedInstance == 0 || savedInstanceState == null) {
             implementTask();
         } else {
-
             dataSet = Parcels.unwrap(savedInstanceState.getParcelable("movieDataSet"));
             if (dataSet != null) {
                 progressBar.setVisibility(View.GONE);
@@ -109,30 +133,46 @@ public class GridFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
 
-                if (twoPaneUI) {
+                DetailFragment detailFragment;
+
+                if (!favouriteSelected) {
+
                     Bundle bundleData = new Bundle();
                     bundleData.putParcelable("parcelable_data", Parcels.wrap(new MovieModel(dataSet.get(position).poster_path,
                             dataSet.get(position).overview, dataSet.get(position).title,
                             dataSet.get(position).release_date, dataSet.get(position).vote_count,
                             dataSet.get(position).vote_average, dataSet.get(position).id)));
 
-                    Fragment detail_fragment = new DetailFragment();
-                    detail_fragment.setArguments(bundleData);
+                    detailFragment = new DetailFragment();
+                    detailFragment.setArguments(bundleData);
 
-                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
-                            detail_fragment).addToBackStack(null).commit();
+
                 } else {
-                    Bundle bundleData = new Bundle();
-                    bundleData.putParcelable("parcelable_data", Parcels.wrap(new MovieModel(dataSet.get(position).poster_path,
-                            dataSet.get(position).overview, dataSet.get(position).title,
-                            dataSet.get(position).release_date, dataSet.get(position).vote_count,
-                            dataSet.get(position).vote_average, dataSet.get(position).id)));
 
-                    Fragment detail_fragment = new DetailFragment();
-                    detail_fragment.setArguments(bundleData);
+                    long movieID = 0;
 
+                    GridCursorAdapter cursorAdapter = (GridCursorAdapter) parent.getAdapter();
+                    Cursor cursor = cursorAdapter.getCursor();
+
+                    if (cursor != null && cursor.moveToPosition(position)) {
+                        movieID = cursor.getLong(1);
+                    }
+
+                    Uri uri = ContentUris.withAppendedId(MoviesContract.MovieEntry.CONTENT_URI,
+                            movieID);
+                    detailFragment = DetailFragment.newInstance(movieID, uri);
+
+                    favouriteSelected = false;
+
+                }
+
+                //For checking if device is tablet or not and change container accordingly
+                if (twoPaneUI) {
+                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                            detailFragment).addToBackStack(null).commit();
+                } else {
                     getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.grid_fragment_container,
-                            detail_fragment).addToBackStack(null).commit();
+                            detailFragment).addToBackStack(null).commit();
                 }
 
             }
@@ -150,7 +190,7 @@ public class GridFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        // outState.putParcelableArrayList("movieDataSet",);
+
         outState.putParcelable("movieDataSet", Parcels.wrap(dataSet));
         super.onSaveInstanceState(outState);
     }
@@ -194,30 +234,74 @@ public class GridFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         String Url;
+        favouriteSelected = false;
+
         if (item.getItemId() == R.id.most_popular) {
             Url = getString(R.string.sort_popular);
-        } else {
+
+            if (ConnectionDetector.isAvailiable(getActivity())) {
+
+                noInternet.setVisibility(View.GONE);
+                gridview.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setIndeterminate(true);
+                dataSet = new ArrayList<>();
+                RequestPoster(Url, getString(R.string.URLRear));
+
+            } else {
+
+                progressBar.setVisibility(View.GONE);
+                gridview.setVisibility(View.GONE);
+                noInternet.setVisibility(View.VISIBLE);
+                Toast.makeText(getActivity(), "Check your internet Connection", Toast.LENGTH_SHORT).show();
+            }
+        } else if (item.getItemId() == R.id.highest_rated) {
             Url = getString(R.string.sort_rated);
-        }
 
-        if (ConnectionDetector.isAvailiable(getActivity())) {
+            if (ConnectionDetector.isAvailiable(getActivity())) {
 
-            noInternet.setVisibility(View.GONE);
-            gridview.setVisibility(View.GONE);
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.setIndeterminate(true);
-            dataSet = new ArrayList<>();
-            RequestPoster(Url, getString(R.string.URLRear));
+                noInternet.setVisibility(View.GONE);
+                gridview.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setIndeterminate(true);
+                dataSet = new ArrayList<>();
+                RequestPoster(Url, getString(R.string.URLRear));
 
+            } else {
+
+                progressBar.setVisibility(View.GONE);
+                gridview.setVisibility(View.GONE);
+                noInternet.setVisibility(View.VISIBLE);
+                Toast.makeText(getActivity(), "Check your internet Connection", Toast.LENGTH_SHORT).show();
+            }
         } else {
 
+            favouriteSelected = true;
             progressBar.setVisibility(View.GONE);
-            gridview.setVisibility(View.GONE);
-            noInternet.setVisibility(View.VISIBLE);
-            Toast.makeText(getActivity(), "Check your internet Connection", Toast.LENGTH_SHORT).show();
+            noInternet.setVisibility(View.GONE);
+            gridview.setVisibility(View.VISIBLE);
+            gridview.setAdapter(mCursorAdapter);
         }
+
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+
+        Cursor c =
+                getActivity().getContentResolver().query(MoviesContract.MovieEntry.CONTENT_URI,
+                        projections,
+                        null,
+                        null,
+                        null);
+
+        // initialize loader
+        if (c != null && c.getCount() != 0) {
+            getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
+        }
+        super.onActivityCreated(savedInstanceState);
     }
 
     //function that requests for movie detail as per sort_order of movies
@@ -289,4 +373,35 @@ public class GridFragment extends Fragment {
         });
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(getActivity(),
+                MoviesContract.MovieEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null);
+    }
+
+    @TargetApi(11)
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+        mCursorAdapter.swapCursor(data);
+
+    }
+
+    @TargetApi(11)
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCursorAdapter.swapCursor(null);
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //Starts a new or restarts an existing Loader in this manager
+        getLoaderManager().restartLoader(0, null, this);
+    }
 }
