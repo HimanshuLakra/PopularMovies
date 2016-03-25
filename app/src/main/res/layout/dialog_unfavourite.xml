@@ -4,26 +4,27 @@
     android:layout_height="match_parent"
     android:background="@color/white"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp">
 
     <TextView
         style="@style/TextViewStyle_stats"
         android:layout_gravity="start"
-        android:text="Mark it as unfavourite"
-        android:textSize="18sp"/>
+        android:text="@string/dialog_title"
+        android:textSize="18sp"
+        />
 
     <TextView
         style="@style/TextViewStyle"
         android:layout_gravity="start"
         android:layout_marginTop="16dp"
         android:textSize="15sp"
-        android:text="This movie is already marked as favourite.Do you want to unmark it as favourite?" />
+        android:text="@string/dialog_content" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:weightSum="1"
-        android:layout_marginTop="15dp">
+        android:layout_marginTop="24dp">
 
         <LinearLayout
             style="@style/LinearLayoutWeight"/>
@@ -35,8 +36,7 @@
             android:text="NO"
             android:id="@+id/discard"
             android:textColor="#009688"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="18sp"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -46,8 +46,7 @@
             android:text="YES"
             android:id="@+id/accept"
             android:textColor="#009688"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="18sp" />
     </LinearLayout>
 
 </LinearLayout>

@@ -4,29 +4,38 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:weightSum="6">
+    android:orientation="vertical"
+    android:background="#eeeeee">
 
-    <FrameLayout android:id="@+id/grid_fragment_container"
-        android:layout_width="0dp"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar_activity"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/toolbar_color"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="2"
-        tools:layout="@layout/activity_main"/>
+        android:orientation="horizontal"
+        android:weightSum="2">
 
-    <FrameLayout
-        android:id="@+id/fragment_detail_container"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="4">
+        <FrameLayout
+            android:id="@+id/grid_fragment_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            tools:layout="@layout/activity_main" />
 
-        <ProgressBar
-            android:id="@+id/progress_bar_tablet"
-            style="@android:style/Widget.ProgressBar.Small"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_gravity="center" />
+        <FrameLayout
+            android:id="@+id/fragment_detail_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-    </FrameLayout>
+
+        </FrameLayout>
+    </LinearLayout>
 
 
 </LinearLayout>

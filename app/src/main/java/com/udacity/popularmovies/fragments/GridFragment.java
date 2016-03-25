@@ -1,28 +1,31 @@
 package com.udacity.popularmovies.fragments;
 
 import android.annotation.TargetApi;
-import android.content.ContentUris;
 import android.database.Cursor;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -30,7 +33,6 @@ import com.google.gson.GsonBuilder;
 import com.udacity.popularmovies.ConnectionDetector;
 import com.udacity.popularmovies.R;
 import com.udacity.popularmovies.adapter.GridAdapter;
-import com.udacity.popularmovies.adapter.GridCursorAdapter;
 import com.udacity.popularmovies.api.ApiService;
 import com.udacity.popularmovies.data.MoviesContract;
 import com.udacity.popularmovies.model.ItemTypeAdapterFactory;
@@ -52,25 +54,30 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
 
     //arrayList for recieved movies details
     ArrayList<MovieModel> dataSet;
+    ArrayList<MovieModel> dataSetDB;
+
+    //call object for async call through retrofit
+    Call<ArrayList<MovieModel>> call;
 
     boolean twoPaneUI;
     MovieModel firstRecievedItem;
 
-    @Bind(R.id.toolbar_movies)
-    Toolbar toolbar;
-    @Bind(R.id.gridview)
-    GridView gridview;
+    @Bind(R.id.grid_view_recycler)
+    RecyclerView gridview;
     @Bind(R.id.progress_bar)
     ProgressBar progressBar;
     @Bind(R.id.no_internet_connection)
     RelativeLayout noInternet;
     @Bind(R.id.try_again)
     Button tryAgain;
-    int flagSavedInstance = 0;
+    @Bind(R.id.collection_empty)
+    TextView favouriteCollection;
 
-    GridCursorAdapter mCursorAdapter;
+    ActionBar actionBar;
+    GridLayoutManager gridLayoutManager;
     private static final int CURSOR_LOADER_ID = 0;
-    static boolean favouriteSelected = false;
+    boolean favouriteSelected = false;
+    GridAdapter gridAdapter;
 
     String[] projections = {
             MoviesContract.MovieEntry.ID,
@@ -82,17 +89,19 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
             MoviesContract.MovieEntry.COLUMN_RELEASE_DATE
     };
 
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState == null || !savedInstanceState.containsKey("movieDataSet")) {
-            flagSavedInstance = 0;
+        if (savedInstanceState == null) {
+            dataSet = new ArrayList<>();
+            dataSetDB = new ArrayList<>();
         } else {
             dataSet = Parcels.unwrap(savedInstanceState.getParcelable("movieDataSet"));
-            flagSavedInstance = 1;
-        }
+            dataSetDB = Parcels.unwrap(savedInstanceState.getParcelable("movieDataSetDB"));
 
+        }
     }
 
     @Nullable
@@ -100,84 +109,37 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         View gridFragmentView = inflater.inflate(R.layout.grid_view_fragment, container, false);
-
         ButterKnife.bind(this, gridFragmentView);
-        AppCompatActivity activityCompat = (AppCompatActivity) getActivity();
-        toolbar.setTitle("PopularMovies");
-        activityCompat.setSupportActionBar(toolbar);
 
+        AppCompatActivity activityCompat = (AppCompatActivity) getActivity();
+        actionBar = activityCompat.getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowHomeEnabled(false);
+            actionBar.setDisplayHomeAsUpEnabled(false);
+            actionBar.setTitle("Movie Hall");
+        }
         setHasOptionsMenu(true);
 
-        mCursorAdapter = new GridCursorAdapter(getActivity(), null, 0);
+        gridLayoutManager = new GridLayoutManager(getActivity(), 2, GridLayoutManager.VERTICAL, false);
+        gridview.setLayoutManager(gridLayoutManager);
+        gridAdapter = new GridAdapter(getActivity(), dataSetDB, getActivity().getSupportFragmentManager());
 
         Bundle recievedBundle = getArguments();
         twoPaneUI = recievedBundle.getBoolean("twoPaneExists");
 
-        if (flagSavedInstance == 0 || savedInstanceState == null) {
+        if (dataSet.isEmpty() && !favouriteSelected) {
             implementTask();
         } else {
-            dataSet = Parcels.unwrap(savedInstanceState.getParcelable("movieDataSet"));
-            if (dataSet != null) {
-                progressBar.setVisibility(View.GONE);
-                noInternet.setVisibility(View.GONE);
-                gridview.setVisibility(View.VISIBLE);
-                gridview.setAdapter(new GridAdapter(getActivity(), dataSet));
+            if (favouriteSelected) {
+                makeGridViewVisible();
+                gridview.setAdapter(new GridAdapter(getActivity(), dataSetDB, getActivity().getSupportFragmentManager()));
+            } else if (dataSet != null) {
+                makeGridViewVisible();
+                gridview.setAdapter(new GridAdapter(getActivity(), dataSet, getActivity().getSupportFragmentManager()));
             } else {
-                progressBar.setVisibility(View.GONE);
-                noInternet.setVisibility(View.VISIBLE);
-                gridview.setVisibility(View.GONE);
+                noInternetFunctionality();
             }
         }
-
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v,
-                                    int position, long id) {
-
-                DetailFragment detailFragment;
-
-                if (!favouriteSelected) {
-
-                    Bundle bundleData = new Bundle();
-                    bundleData.putParcelable("parcelable_data", Parcels.wrap(new MovieModel(dataSet.get(position).poster_path,
-                            dataSet.get(position).overview, dataSet.get(position).title,
-                            dataSet.get(position).release_date, dataSet.get(position).vote_count,
-                            dataSet.get(position).vote_average, dataSet.get(position).id)));
-
-                    detailFragment = new DetailFragment();
-                    detailFragment.setArguments(bundleData);
-
-
-                } else {
-
-                    long movieID = 0;
-
-                    GridCursorAdapter cursorAdapter = (GridCursorAdapter) parent.getAdapter();
-                    Cursor cursor = cursorAdapter.getCursor();
-
-                    if (cursor != null && cursor.moveToPosition(position)) {
-                        movieID = cursor.getLong(1);
-                    }
-
-                    Uri uri = ContentUris.withAppendedId(MoviesContract.MovieEntry.CONTENT_URI,
-                            movieID);
-                    detailFragment = DetailFragment.newInstance(movieID, uri);
-
-                    favouriteSelected = false;
-
-                }
-
-                //For checking if device is tablet or not and change container accordingly
-                if (twoPaneUI) {
-                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
-                            detailFragment).addToBackStack(null).commit();
-                } else {
-                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.grid_fragment_container,
-                            detailFragment).addToBackStack(null).commit();
-                }
-
-            }
-        });
-
         tryAgain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -192,6 +154,7 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
     public void onSaveInstanceState(Bundle outState) {
 
         outState.putParcelable("movieDataSet", Parcels.wrap(dataSet));
+        outState.putParcelable("movieDataSetDB", Parcels.wrap(dataSetDB));
         super.onSaveInstanceState(outState);
     }
 
@@ -200,17 +163,11 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
     public void implementTask() {
 
         if (ConnectionDetector.isAvailiable(getActivity())) {
-
-            noInternet.setVisibility(View.GONE);
-            progressBar.setVisibility(View.VISIBLE);
+            makeProgessBarVisible();
             progressBar.setIndeterminate(true);
-            dataSet = new ArrayList<>();
             RequestPoster(getString(R.string.sort_popular), getString(R.string.URLRear));
-
         } else {
-            progressBar.setVisibility(View.GONE);
-            gridview.setVisibility(View.GONE);
-            noInternet.setVisibility(View.VISIBLE);
+            noInternetFunctionality();
         }
 
     }
@@ -221,14 +178,59 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
         ButterKnife.unbind(this);
     }
 
+    public void noInternetFunctionality() {
+        progressBar.setVisibility(View.GONE);
+        gridview.setVisibility(View.GONE);
+        noInternet.setVisibility(View.VISIBLE);
+
+        if (twoPaneUI) {
+            Fragment detail_fragment = new ClearFragment();
+            getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                    detail_fragment).commit();
+        }
+    }
+
+    public void makeGridViewVisible() {
+        progressBar.setVisibility(View.GONE);
+        noInternet.setVisibility(View.GONE);
+        gridview.setVisibility(View.VISIBLE);
+
+        gridview.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+
+                        if (Build.VERSION.SDK_INT < 16) {
+                            gridview.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        } else {
+                            gridview.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        }
+
+                        int viewWidth = gridview.getMeasuredWidth();
+                        float cardViewWidth = getActivity().getResources().getDimension(R.dimen.movie_layout_width);
+                        int newSpanCount = (int) Math.floor(viewWidth / cardViewWidth);
+                        if (newSpanCount != 0) {
+                            gridLayoutManager.setSpanCount(newSpanCount);
+                            gridLayoutManager.requestLayout();
+                        }
+                    }
+                });
+    }
+
+    public void makeProgessBarVisible() {
+        noInternet.setVisibility(View.GONE);
+        gridview.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-
+        super.onCreateOptionsMenu(menu, inflater);
         menu.clear();
         inflater.inflate(R.menu.main, menu);
-        super.onCreateOptionsMenu(menu, inflater);
 
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -238,51 +240,72 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
 
         if (item.getItemId() == R.id.most_popular) {
             Url = getString(R.string.sort_popular);
+            favouriteCollection.setVisibility(View.GONE);
+            actionBar.setTitle("Most Popular");
 
             if (ConnectionDetector.isAvailiable(getActivity())) {
-
-                noInternet.setVisibility(View.GONE);
-                gridview.setVisibility(View.GONE);
-                progressBar.setVisibility(View.VISIBLE);
+                makeProgessBarVisible();
                 progressBar.setIndeterminate(true);
-                dataSet = new ArrayList<>();
                 RequestPoster(Url, getString(R.string.URLRear));
-
             } else {
-
-                progressBar.setVisibility(View.GONE);
-                gridview.setVisibility(View.GONE);
-                noInternet.setVisibility(View.VISIBLE);
-                Toast.makeText(getActivity(), "Check your internet Connection", Toast.LENGTH_SHORT).show();
+                noInternetFunctionality();
             }
+
+            return true;
         } else if (item.getItemId() == R.id.highest_rated) {
             Url = getString(R.string.sort_rated);
+            favouriteCollection.setVisibility(View.GONE);
+            actionBar.setTitle("Highest Rated");
 
             if (ConnectionDetector.isAvailiable(getActivity())) {
 
-                noInternet.setVisibility(View.GONE);
-                gridview.setVisibility(View.GONE);
-                progressBar.setVisibility(View.VISIBLE);
+                makeProgessBarVisible();
                 progressBar.setIndeterminate(true);
-                dataSet = new ArrayList<>();
                 RequestPoster(Url, getString(R.string.URLRear));
 
             } else {
-
-                progressBar.setVisibility(View.GONE);
-                gridview.setVisibility(View.GONE);
-                noInternet.setVisibility(View.VISIBLE);
-                Toast.makeText(getActivity(), "Check your internet Connection", Toast.LENGTH_SHORT).show();
+                noInternetFunctionality();
             }
-        } else {
+            return true;
 
+        } else if (item.getItemId() == R.id.favourite_movies) {
+            actionBar.setTitle("Favourite");
+            if (ConnectionDetector.isAvailiable(getActivity()) && call != null && call.isExecuted()) {
+                call.cancel();
+            }
             favouriteSelected = true;
-            progressBar.setVisibility(View.GONE);
-            noInternet.setVisibility(View.GONE);
-            gridview.setVisibility(View.VISIBLE);
-            gridview.setAdapter(mCursorAdapter);
-        }
+            makeGridViewVisible();
 
+            if (dataSetDB.isEmpty()) {
+                gridview.setVisibility(View.GONE);
+                favouriteCollection.setVisibility(View.VISIBLE);
+                if (twoPaneUI) {
+                    Fragment detail_fragment = new ClearFragment();
+                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                            detail_fragment).commit();
+                }
+            } else {
+                favouriteCollection.setVisibility(View.GONE);
+                gridAdapter.notifyDataSetChanged();
+                gridview.setAdapter(gridAdapter);
+                if (twoPaneUI) {
+
+                    firstRecievedItem = new MovieModel(null,
+                            dataSetDB.get(0).overview, dataSetDB.get(0).title,
+                            dataSetDB.get(0).release_date, dataSetDB.get(0).vote_count,
+                            dataSetDB.get(0).vote_average, dataSetDB.get(0).id, dataSetDB.get(0).imageBitmap);
+                    Bundle bundleData = new Bundle();
+                    bundleData.putParcelable("parcelable_data", Parcels.wrap(firstRecievedItem));
+
+                    Fragment detail_fragment = new DetailFragment();
+                    detail_fragment.setArguments(bundleData);
+
+                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                            detail_fragment).commit();
+                }
+            }
+            return true;
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -307,6 +330,7 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
     //function that requests for movie detail as per sort_order of movies
     public void RequestPoster(String sortOrder, String Key) {
 
+        dataSet.clear();
         //ApiService(Rest api call function) interface object
         ApiService apiService;
 
@@ -322,7 +346,7 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
         apiService = retrofit.create(ApiService.class);
 
         //Asynchronuos call to REST moviedb.org API
-        Call<ArrayList<MovieModel>> call = apiService.getMovieDetails(sortOrder, Key);
+        call = apiService.getMovieDetails(sortOrder, Key);
 
         call.enqueue(new Callback<ArrayList<MovieModel>>() {
             @Override
@@ -333,36 +357,44 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
                     //assign recieved arraylist to dataset
                     dataSet = response.body();
 
-                    firstRecievedItem = new MovieModel(dataSet.get(0).poster_path,
-                            dataSet.get(0).overview, dataSet.get(0).title,
-                            dataSet.get(0).release_date, dataSet.get(0).vote_count,
-                            dataSet.get(0).vote_average, dataSet.get(0).id);
+                    if (dataSet.size() != 0) {
+                        firstRecievedItem = new MovieModel(dataSet.get(0).poster_path,
+                                dataSet.get(0).overview, dataSet.get(0).title,
+                                dataSet.get(0).release_date, dataSet.get(0).vote_count,
+                                dataSet.get(0).vote_average, dataSet.get(0).id, null);
 
-                    //handler to run code on ui thread
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                        //handler to run code on ui thread
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
 
-                            progressBar.setVisibility(View.GONE);
-                            noInternet.setVisibility(View.GONE);
-                            gridview.setVisibility(View.VISIBLE);
+                                    makeGridViewVisible();
+                                    //set gridview adapter
+                                    gridview.setAdapter(new GridAdapter(getActivity(), dataSet, getActivity().getSupportFragmentManager()));
 
-                            //set gridview adapter
-                            gridview.setAdapter(new GridAdapter(getActivity(), dataSet));
+                                    if (twoPaneUI) {
+                                        Bundle bundleData = new Bundle();
+                                        bundleData.putParcelable("parcelable_data", Parcels.wrap(firstRecievedItem));
 
-                            if (twoPaneUI) {
-                                Bundle bundleData = new Bundle();
-                                bundleData.putParcelable("parcelable_data", Parcels.wrap(firstRecievedItem));
+                                        Fragment detail_fragment = new DetailFragment();
+                                        detail_fragment.setArguments(bundleData);
 
-                                Fragment detail_fragment = new DetailFragment();
-                                detail_fragment.setArguments(bundleData);
+                                        getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                                                detail_fragment).commit();
+                                    }
 
-                                getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
-                                        detail_fragment).addToBackStack(null).commit();
-                            }
-
+                                }
+                            });
                         }
-                    });
+                    } else {
+                        if (twoPaneUI) {
+                            Fragment detail_fragment = new ClearFragment();
+                            getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_detail_container,
+                                    detail_fragment).commit();
+                        }
+                    }
+
                 }
             }
 
@@ -387,16 +419,42 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
-        mCursorAdapter.swapCursor(data);
+        if (data != null) {
 
+            dataSetDB.clear();
+            int COLUMN_INDEX_MOVIE_ID = 1;
+            int COLUMN_INDEX_TITLE = 2;
+            int COLUMN_INDEX_DESCRIPTION = 3;
+            int COLUMN_INDEX_RELEASE_DATE = 4;
+            int COLUMN_INDEX_VOTE_COUNT = 5;
+            int COLUMN_INDEX_TRAILER_URL = 6;
+            int COLUMN_INDEX_VOTE_AVERAGE = 7;
+            int COLUMN_INDEX_IMAGE = 8;
+
+            while (data.moveToNext()) {
+
+                MovieModel movieDatabse = new MovieModel(null, data.getString(COLUMN_INDEX_DESCRIPTION),
+                        data.getString(COLUMN_INDEX_TITLE), data.getString(COLUMN_INDEX_RELEASE_DATE),
+                        data.getInt(COLUMN_INDEX_VOTE_COUNT),
+                        data.getDouble(COLUMN_INDEX_VOTE_AVERAGE),
+                        data.getLong(COLUMN_INDEX_MOVIE_ID), getImage(data.getBlob(COLUMN_INDEX_IMAGE)));
+
+                dataSetDB.add(movieDatabse);
+            }
+
+            data.close();
+        }
     }
 
     @TargetApi(11)
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        mCursorAdapter.swapCursor(null);
+        dataSetDB = new ArrayList<>();
     }
 
+    public static Bitmap getImage(byte[] image) {
+        return BitmapFactory.decodeByteArray(image, 0, image.length);
+    }
 
     @Override
     public void onResume() {
@@ -405,3 +463,4 @@ public class GridFragment extends Fragment implements LoaderManager.LoaderCallba
         getLoaderManager().restartLoader(0, null, this);
     }
 }
+

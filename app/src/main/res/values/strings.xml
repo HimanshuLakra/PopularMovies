@@ -15,9 +15,15 @@
     <string name="URLRear">5581802f52b42e662fade7be5bb11099</string>
     <string name="sort_popular">popularity.desc</string>
     <string name="sort_rated">vote_count.desc</string>
+    <string name="trailer_heading">Trailers</string>
+    <string name="review_heading">Reviews</string>
 
 
     <string name="content_authority">com.udacity.popularmovies.app</string>
+
+    <string name="dialog_title">Mark it as unfavourite</string>
+    <string name="dialog_content">This movie is already marked as favourite.Do you want to unmark it as favourite?</string>
+    <string name="snackbar_movie_added">This movie has been added to your favourite collection</string>
 
 
 </resources>

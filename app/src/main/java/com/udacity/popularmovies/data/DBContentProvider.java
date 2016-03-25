@@ -29,7 +29,7 @@ public class DBContentProvider extends ContentProvider {
 
         // add a code for each type of URI you want
         matcher.addURI(authority, MoviesContract.MovieEntry.MOVIE_TABLE, MOVIE);
-       // matcher.addURI(authority, MoviesContract.MovieEntry.MOVIE_TABLE + "/#", MOVIE_WITH_ID);
+        // matcher.addURI(authority, MoviesContract.MovieEntry.MOVIE_TABLE + "/#", MOVIE_WITH_ID);
         matcher.addURI(authority, MoviesContract.MovieEntry.MOVIE_TABLE + "/#", MOVIE_WITH_MOVIE_ID);
         return matcher;
     }
@@ -57,6 +57,9 @@ public class DBContentProvider extends ContentProvider {
                         null,
                         null,
                         sortOrder);
+
+                if (getContext() != null)
+                    retCursor.setNotificationUri(getContext().getContentResolver(), uri);
                 return retCursor;
             }
             case MOVIE_WITH_MOVIE_ID: {
@@ -68,6 +71,8 @@ public class DBContentProvider extends ContentProvider {
                         null,
                         null,
                         sortOrder);
+                if (getContext() != null)
+                    retCursor.setNotificationUri(getContext().getContentResolver(), uri);
                 return retCursor;
             }
 
@@ -190,6 +195,9 @@ public class DBContentProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
+
+        if (getContext() != null)
+            getContext().getContentResolver().notifyChange(uri, null);
 
         return numDeleted;
     }

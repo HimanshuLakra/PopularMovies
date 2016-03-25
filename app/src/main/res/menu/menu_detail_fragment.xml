@@ -4,15 +4,9 @@
 
     <item
         android:id="@+id/share_trailer"
-        android:orderInCategory="100"
+        android:orderInCategory="400"
         android:title="@string/share"
         android:icon="@drawable/ic_share"
         app:showAsAction="always" />
 
-    <!--<item
-        android:id="@+id/mark_favourite"
-        android:orderInCategory="200"
-        android:title="@string/favourite"
-        android:icon="@drawable/ic_star_deselected"
-        app:showAsAction="always" />-->
 </menu>

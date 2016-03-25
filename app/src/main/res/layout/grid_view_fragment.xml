@@ -3,14 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="#e0e0e0">
 
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/toolbar_movies"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/toolbar_color"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -24,6 +19,15 @@
             android:layout_gravity="center"
             style="@android:style/Widget.ProgressBar.Small" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Favourite Collection is empty"
+            android:textColor="@color/text_color_description"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:id="@+id/collection_empty"/>
+
         <RelativeLayout
             android:id="@+id/no_internet_connection"
             android:layout_width="match_parent"
@@ -35,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:textColor="@color/white"
+                android:textColor="@color/text_color_description"
                 android:text="@string/nointernet"
                 android:layout_centerVertical="true"
                 android:layout_centerHorizontal="true" />
@@ -53,17 +57,16 @@
 
         </RelativeLayout>
 
-        <GridView
-            android:id="@+id/gridview"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/grid_view_recycler"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"
-            android:columnWidth="150dp"
-            android:gravity="center"
-            android:horizontalSpacing="0dp"
-            android:numColumns="auto_fit"
-            android:stretchMode="columnWidth"
-            android:verticalSpacing="0dp" />
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginLeft="4dp"
+            android:orientation="vertical"
+            android:elevation="4dp"
+            android:visibility="gone"/>
 
         <View
             android:id="@+id/toolbar_shadow"

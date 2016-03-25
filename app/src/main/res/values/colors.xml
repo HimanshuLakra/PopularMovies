@@ -4,9 +4,15 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="toolbar_color">#455a64</color>
+    <color name="toolbar_color">#ff9800</color>
     <color name="white">#ffffff</color>
     <color name="text_color_description">#616161</color>
     <color name="coordinator_background">#eeeeee</color>
     <color name="seperator">#e0e0e0</color>
+    <color name="border_background">#cfd8dc</color>
+
+    <color name="fab_color">#ff5252</color>
+    <color name="toolbar_fav">#ff6e40</color>
+
+    <color name="default_color">#60000000</color>
 </resources>
