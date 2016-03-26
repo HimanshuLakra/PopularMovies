@@ -12,7 +12,7 @@
     <string name="tryAgain">TRY AGAIN</string>
 
     <string name="URLInitial">http://api.themoviedb.org/3/</string>
-    <string name="URLRear">5581802f52b42e662fade7be5bb11099</string>
+    <string name="URLRear">xxxxxxxxxxxxxxxxxxxxxx</string>
     <string name="sort_popular">popularity.desc</string>
     <string name="sort_rated">vote_count.desc</string>
     <string name="trailer_heading">Trailers</string>
