@@ -1,6 +1,3 @@
 Popular Movies
 
-Through Popular Movies Application user can see popular movies and highest rated movies in the gridview. 
-When user clicks on poster of movie image, user will be directed to an interface with more details of that movie.
-
-Api used in the application is themoviedb.org API.
+Built an app, optimized for tablets, to help users discover popular and highly rated movies on the web. It displays a scrolling grid of movie trailers, launches a details screen whenever a particular movie is selected, allows users to save favorites, play trailers, and read user reviews. This app utilizes core Android user interface components and fetches movie information using themoviedb.org web API.
